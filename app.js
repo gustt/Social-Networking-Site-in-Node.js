@@ -212,18 +212,46 @@ app.get('/', loadUser, function(req, res) {
   res.redirect('/index')
 });
 
-app.get('/user/videos',loadUser, function(req, res){
- console.log('heeeeeeeeeeeeeeeeeeee');
- console.log('params=============='+req.params.id);
- 
- User.find({_id:req.params.id}, function(error, user) {
+//Share Friends video with urself
+
+app.post('/share/video', loadUser, function(req, res,next){
+   var post = Post.findOne({_id:req.body._id},function(err, pst) { 
+      var post = new Post();
+      post.user_id = req.currentUser.id;
+      post.filename = pst.filename;
+      post.save(function(err) {
+        if (err)
+      	  next(err);
+       	req.flash('info', 'Video successfully Shared');
+        res.redirect('/videos');
+      });
+  });
+});
+
+
+//show the videos posted by friends
+app.get('/user/videos/:id',loadUser, function(req, res){
+ User.findById(req.param('id'), function(error, user) {
     console.log('user info',user);
+    var post = Post.find({user_id:user._id},function(err,posts) {
+      if(posts.length == 0) {
+        req.flash('error', user.username +'&nbsp;'+'Has Not Posted any Video');
+        res.redirect('/userinfo');
+      }
+      else{
+	      res.render('videos/index1', {
+		locals: {
+		  posts: posts,currentUser: req.currentUser
+		}
+	      });
+           }
+   });
  });
 });
 
 
 
-
+//show full details of friend
 app.get('/friendinfo/show/:id',loadUser, function(req, res){
  User.findById(req.param('id'), function(error, user) {
     console.log('user info',user);
@@ -236,7 +264,7 @@ app.get('/friendinfo/show/:id',loadUser, function(req, res){
   });
 });
 
-
+//show all friends
 app.get('/show/friends', loadUser, function(req, res){
      var myarray= new Array();
      console.log('---------------current user'+req.currentUser.id);
@@ -269,7 +297,7 @@ app.get('/show/friends', loadUser, function(req, res){
 });
 
 
-
+// accept friend request
 app.post('/accept/request', loadUser, function(req, res){
    var user = User.find({_id:req.body._id},function(err, users) { 
      function friendRequestFailed() {
@@ -286,6 +314,7 @@ app.post('/accept/request', loadUser, function(req, res){
    });
 });
 
+//show all friend requests
 app.get('/show/friendrequests', loadUser, function(req, res){
   var myarray= new Array()
   var friend = Friends.find({acceptor:req.currentUser.id,status:'0'},function(err, friends) {
@@ -309,8 +338,7 @@ app.get('/show/friendrequests', loadUser, function(req, res){
   });     
 });
 
-//add user
-
+//send friend request
 app.post('/add/user', loadUser, function(req, res){
    var user = User.find({_id:req.body._id},function(err, users) { 
      function friendRequestFailed() {
