@@ -1,0 +1,9 @@
+div(align="center")
+  a(href='/userinfo') Home
+  ul
+    -each post in posts
+      if(post.user_id == currentUser.id)
+        li.right
+          h1=post.filename
+          h3=post.created_at
+          embed(src='/uploads/profile/photos/'+post.filename, width=420, height=320, autoplay=0)

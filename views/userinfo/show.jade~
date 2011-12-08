@@ -1,0 +1,28 @@
+div(align='center')
+  a(href='/userinfo') Home
+  h1=title
+  div.user
+    div
+      img(src='/uploads/photos/'+user.photo, width=240)
+    div
+      span First Name:
+      div.first_name= user.first_name
+    div
+      span Last Name:
+      div.last_name= user.last_name
+    div
+      span Age:
+      div.age=user.age
+    div
+      span sex:
+      div.sex=user.sex
+    div
+      span Location:
+      div.location=user.location
+  div
+      form( method="post", action="/add/user")
+        input( type="hidden", name="_id", value=user._id.toHexString())
+        div
+          input( type="submit", name="Submit",value="Add As a Friend")
+
+ 

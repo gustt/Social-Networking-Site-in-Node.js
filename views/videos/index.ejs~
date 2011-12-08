@@ -1,0 +1,15 @@
+<h1> Videos: </h1>
+  <a href='/photos/new/'> Create </a>
+<ol>
+  <%for(var post=0; post<posts.length; post++){%>
+    <li>
+      <h4>Video Name:<%= post.filename %><h4>
+      <p>
+        <embed src='<%= post.filename %>' autoplay='false' width='420' height='320' />
+      </p>
+    </li>
+  <% } %>
+</ul      	
+
+
+ 

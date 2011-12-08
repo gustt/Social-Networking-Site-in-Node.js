@@ -1,0 +1,16 @@
+<h1> New Photo:</h1>
+<form action='/photos', method ='post' enctype='multipart/form-data'> 
+    <div>
+      <span>FileName :</span>
+      <input type="text" name="filename" id="filename"/>
+    </div>
+    <div>
+      <span>File :</span>
+      <input type="file" name="file" id="file" />
+    </div>
+    <div>
+      <span>Submit :</span>
+      <input type="submit" name="Submit" value ='Submit' id="editSubmit" />
+    </div>
+</form>
+     

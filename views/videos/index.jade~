@@ -1,0 +1,8 @@
+h1 Photos:
+  a(href='/photos/new/') Create
+ul
+  -each photo in photos
+    li.right
+      h1=photo.filename
+      h5=photo.created_at
+      embed(src=photo, width=420, height=320, autoplay=0)

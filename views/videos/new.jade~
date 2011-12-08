@@ -1,0 +1,6 @@
+div(align="center")
+  a(href='/userinfo') Home
+  h1 New Video
+  form(action='/videos', method ='post', enctype ='form-data')!= partial('../partials/photo_form', {post: post})
+    div
+      input(type = 'submit', value='Upload')

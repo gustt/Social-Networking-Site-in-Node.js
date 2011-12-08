@@ -1,0 +1,29 @@
+div
+  div
+    label(for='user_first_name') First Name:
+    input(id='user_first_name', name='user[first_name]', value=user.first_name || '')
+   div
+     label(for='user_last_name') Last Name:
+     input(id='last_last_name',name='user[last_name]', value=user.last_name || '')
+   div
+     label(for='user_age') Age:
+     input(id='user_age',name='user[age]', value=user.age || '')
+   div
+     label(for='user_sex') Sex:
+     select(id='user_sex', name='user[sex]')
+       option(id='user_male',value =user.sex,selected=1)='male'
+       option(id='user_female',value =user.sex)='female'
+   div
+     label(for='user_location') Location:
+     input(id='user_location',name='user[location]', value=user.location || '')
+   div
+     label(for='user_username') UserName:
+     input(id='user_username',name='user[username]', value=user.username || '')
+   div
+     label(for='user_email') Email:
+     input(id='user_email',name='user[email]', value=user.email || '')
+   div
+     label(for='user_password') Password:
+     input(id='user_email',name='user[password]', value=user.password || '', type='password')
+
+

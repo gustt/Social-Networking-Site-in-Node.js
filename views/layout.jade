@@ -1,0 +1,25 @@
+!!!
+html
+  head
+    title= 'Portal'
+    link(rel='stylesheet', href='/stylesheets/style.css')
+    link(rel='stylesheet', href='/stylesheets/aristo/jquery-ui-1.8.5.custom.css')
+    script(type='text/javascript', src='/javascripts/json.js')
+    script(type='text/javascript', src='https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js')
+    script(type='text/javascript', src='https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.7/jquery-ui.min.js')
+    script(type='text/javascript', src='/javascripts/underscore-min.js')
+    script(type='text/javascript', src='/javascripts/backbone-min.js')
+  body
+    #container
+      #header
+        ul
+          li
+          - if (typeof currentUser !== 'undefined')
+            li.right
+              a#logout(href='/sessions') Log Out
+            li.right
+              form.search(action='/search',method='post')
+                input(name='s', value='Search')
+      !{flashMessages}
+      != body
+    script(type='text/javascript', src='/javascripts/flash.js')

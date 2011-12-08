@@ -1,0 +1,20 @@
+div(align='center')
+  a(href='/userinfo') Home
+  h1='Users Registered With Us'
+  -each user in users
+    if(!(user._id==currentUser.id))
+      div
+        a(href="/users/show/"+user._id.toHexString())!= user.username
+        div
+          img(src='/uploads/photos/'+user.photo, height=80, width=60) 
+        div
+          span Name :
+          h4=(user.first_name+'&nbsp;'+user.last_name)
+        div
+          span Sex:
+          h4=user.sex
+        div
+          span Location:
+          h4=user.location
+      
+      

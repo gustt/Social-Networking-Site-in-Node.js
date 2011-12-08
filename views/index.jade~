@@ -1,0 +1,9 @@
+h1 Videos:
+ul
+  -each post in posts
+    li.right
+      h1=post.file
+      h1=post.filename
+      embed(src='/uploads/photos/'+post.filename, width=420, height=320, autoplay=0)
+   
+a(href='/photos/new/') Create    
