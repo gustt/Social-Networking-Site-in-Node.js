@@ -1,8 +1,0 @@
-<form method="post">
-  <div>
-    <div>
-      <span>Photo :</span>
-      <input type="file" name="photo" id="editPhoto" />
-    </div>
-  </div>
-</form>
