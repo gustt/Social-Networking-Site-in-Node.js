@@ -35,6 +35,8 @@
     div
       a(href='/show/friendrequests') Show Friend Requests
     div
+      a(href='/videos') View Videos Video
+    div
       a(href='/videos/new') Upload Video
     div
       a(href='/show/friends') Friends
