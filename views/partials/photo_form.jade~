@@ -1,3 +1,0 @@
-div
-  span File:
-  input(type='file', name='file', value=post.photo || '')
