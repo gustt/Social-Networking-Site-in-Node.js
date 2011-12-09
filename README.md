@@ -8,6 +8,8 @@ node.js application illustrating how to create a social networking like web appl
   * `git clone git://github.com/pragtech/Social-Networking-Site-in-Node.js SocialNetwork`
   * `cd SocialNetwork`
   * `npm install`
+  *  Install mailer : `npm install mailer`
+  *  Install markdown : `npm install markdown`
   * `node app.js`
   * [http://localhost:8000/](http://localhost:8000/)
 
