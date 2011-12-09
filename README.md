@@ -13,11 +13,15 @@ node.js application illustrating how to create a social networking like web appl
   * `node app.js`
   * [http://localhost:8000/](http://localhost:8000/)
 
+## Dependencies
+    * [connect-form](https://github.com/visionmedia/connect-form)
+    * [connect-timeout](https://github.com/LearnBoost/connect-timeout)
+    * [mongoose](https://github.com/LearnBoost/mongoose)
+
 ## Todo demos
   * user authentication
     * [mongoose-auth](https://github.com/bnoguchi/mongoose-auth)
     * [everyauth](https://github.com/bnoguchi/everyauth)
-
 
 ## Contributors
   [pragtech](https://github.com/pragtech) 
