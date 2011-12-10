@@ -61,13 +61,13 @@ app.dynamicHelpers(require('./helpers.js').dynamicHelpers);
 
 
 app.configure('development', function() {
-  app.set('db-uri', 'mongodb://localhost/nodejs_social_network');
+  app.set('db-uri', 'mongodb://localhost/nodejs_social_network1');
   app.use(express.errorHandler({ dumpExceptions: true }));
 });
 
 
 app.configure('production', function() {
-  app.set('db-uri', 'mongodb://localhost/nodejs_social_network');
+  app.set('db-uri', 'mongodb://localhost/nodejs_social_network1');
 });
 
 
@@ -272,8 +272,12 @@ app.get('/show/friends', loadUser, function(req, res){
                                        {requestor:req.currentUser.id, status : 1 }
                                      ]
                                 },function(err, friends) {
-         console.log('---------------requstor'+friends[0].requestor);
-         console.log('---------------acceptor'+friends[0].acceptor);
+         console.log('---------------requstor====='+friends);
+         if(friends == '') {
+           req.flash('error', "You don't have any Friend!...Please Add One");
+           res.redirect('/userinfo');
+         }
+         else {
          for(var i=0;i<friends.length;i++) {
             if(friends[i].requestor == req.currentUser.id) {
               myarray[i] = (friends[i].acceptor);
@@ -292,7 +296,8 @@ app.get('/show/friends', loadUser, function(req, res){
                currentUser: req.currentUser
              }
            });
-        });    
+        }); 
+      }  
     });
 });
 
@@ -422,8 +427,10 @@ app.post('/userinfo/new', loadUser, function(req, res, next) {
 //Show Uploaded Videos
 app.get('/videos', loadUser, function(req, res, next){
   Post.find({ user_id: req.currentUser.id },function(err, posts) {
-    if (err)
-      return next(new Error('Failed to render video'));
+    if(posts.length == 0) {
+      req.flash('error', 'No video Uploaded Yet');
+      res.redirect('/userinfo');
+    }
     else {
     res.render('videos/index1', {
       locals: {
