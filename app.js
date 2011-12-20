@@ -12,6 +12,7 @@ var express = require('express'),
     models = require('./models'),
     sys = require('sys'),
     path = require('path'),
+    geo = require('geo'),
     fs = require('fs'),
     db,
     Friends,
@@ -61,13 +62,13 @@ app.dynamicHelpers(require('./helpers.js').dynamicHelpers);
 
 
 app.configure('development', function() {
-  app.set('db-uri', 'mongodb://localhost/nodejs_social_network1');
+  app.set('db-uri', 'mongodb://localhost/nodejs_social_network_new');
   app.use(express.errorHandler({ dumpExceptions: true }));
 });
 
 
 app.configure('production', function() {
-  app.set('db-uri', 'mongodb://localhost/nodejs_social_network1');
+  app.set('db-uri', 'mongodb://localhost/nodejs_social_network');
 });
 
 
@@ -267,12 +268,10 @@ app.get('/friendinfo/show/:id',loadUser, function(req, res){
 //show all friends
 app.get('/show/friends', loadUser, function(req, res){
      var myarray= new Array();
-     console.log('---------------current user'+req.currentUser.id);
      var friend = Friends.find({$or : [{acceptor:req.currentUser.id, status : 1 },
                                        {requestor:req.currentUser.id, status : 1 }
                                      ]
                                 },function(err, friends) {
-         console.log('---------------requstor====='+friends);
          if(friends == '') {
            req.flash('error', "You don't have any Friend!...Please Add One");
            res.redirect('/userinfo');
@@ -331,7 +330,6 @@ app.get('/show/friendrequests', loadUser, function(req, res){
        myarray[i] = friends[i].requestor
 
      }
-    console.log('----------------xxxxx--------------'+myarray);
      var user = User.find({_id: {$in :myarray}},function(err,users) {
 	res.render('userinfo/show_requests', {
             locals: {
@@ -353,7 +351,6 @@ app.post('/add/user', loadUser, function(req, res){
        //first time the user sends in the request
        if(friends.length==0)
          {
-             console.log('friends------inside if-------------------------------'+friends.length);
              var friend = new Friends();
              friend.requestor = req.currentUser._id;
              friend.acceptor=users[0]._id;
@@ -368,7 +365,6 @@ app.post('/add/user', loadUser, function(req, res){
         else {
           for(var i=0;i<friends.length;i++) {
             if((friends[i].requestor == req.currentUser._id) && (friends[i].acceptor==users[0]._id)) {
-              console.log('-------------------forlooop---'+friends[i].requestor);
               req.flash('error', 'Friend Already Requested');
               res.redirect('/userinfo');
             }
@@ -511,8 +507,20 @@ app.get('/users/new', function(req, res) {
 });
 //Save New User
 app.post('/users.:format?', function(req, res) {
+   
   var user = new User(req.body.user);
   user.photo='default.png';
+  
+  var sensor = false;
+  var address = req.body.user.location;
+  geo.geocoder(geo.google, address, sensor,function(formattedAddress, latitude, longitude) {
+    console.log("Formatted Address: " + formattedAddress);
+    console.log("Latitude: " + latitude);
+    console.log("Longitude: " + longitude);
+    user.latitude = latitude;
+    user.longitude = longitude;
+  
+  
   function userSaveFailed() {
     req.flash('error', 'Account creation failed');
     res.render('users/new.jade', {
@@ -535,6 +543,7 @@ app.post('/users.:format?', function(req, res) {
         res.redirect('/userinfo');
     }
   });
+  });
 });
 
 // Sessions
@@ -547,8 +556,11 @@ app.get('/sessions/new', function(req, res) {
 app.post('/sessions', function(req, res) {
   User.findOne({ email: req.body.user.email }, function(err, user) {
     if (user && user.authenticate(req.body.user.password)) {
-      req.session.user_id = user.id;
-
+       req.session.user_id = user.id;
+       var ipAddress = req.connection.remoteAddress;
+       sys.puts('===========================IP Address: ' + ipAddress);
+        
+       
       // Remember me
       if (req.body.remember_me) {
         var loginToken = new LoginToken({ email: user.email });
@@ -584,7 +596,12 @@ app.post('/search.:format?', loadUser, function(req, res) {
                                  {email:req.body.s}
                                ]
          },function(err, users) {
+             console.log('errrrrrrrrrrrrrrrrrrrrrrrrrrrorrrrrrrrrrrrrrr'+users);
              if(users=='') {
+               req.flash('error','No Such User!...Please Try again');
+               res.redirect('/userinfo');
+             }
+             else if(users[0]._id == req.currentUser.id){
                req.flash('error','No Such User!...Please Try again');
                res.redirect('/userinfo');
              }
