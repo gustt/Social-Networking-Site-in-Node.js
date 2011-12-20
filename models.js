@@ -32,6 +32,8 @@ var User = new Schema({
     'sex':String,
     'photo':String,
     'location':String,
+    'latitude' : String,
+    'longitude' : String,
     'keywords': [String],
     'username':String,
     'email': { type: String, validate: [validatePresenceOf, 'an email is required'], index: { unique: true } },
