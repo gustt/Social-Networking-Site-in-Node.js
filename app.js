@@ -235,6 +235,7 @@ app.get('/user/videos/:id',loadUser, function(req, res){
  User.findById(req.param('id'), function(error, user) {
     console.log('user info',user);
     var post = Post.find({user_id:user._id},function(err,posts) {
+      console.log('==============================================================user selected here is the one that is friend'+user.username);
       if(posts.length == 0) {
         req.flash('error', user.username +'&nbsp;'+'Has Not Posted any Video');
         res.redirect('/userinfo');
@@ -242,7 +243,7 @@ app.get('/user/videos/:id',loadUser, function(req, res){
       else{
 	      res.render('videos/index1', {
 		locals: {
-		  posts: posts,currentUser: req.currentUser
+		  posts: posts,currentUser: req.currentUser,user:user
 		}
 	      });
            }
@@ -259,7 +260,7 @@ app.get('/friendinfo/show/:id',loadUser, function(req, res){
     res.render('userinfo/friend_info', {
       locals: {
         title: 'Full Profile Information',
-        user:user
+        user:user,currentUser: req.currentUser
       }
     });
   });
@@ -333,7 +334,7 @@ app.get('/show/friendrequests', loadUser, function(req, res){
      var user = User.find({_id: {$in :myarray}},function(err,users) {
 	res.render('userinfo/show_requests', {
             locals: {
-               users: users,
+               users: users,currentUser: req.currentUser,
 		title :"My Friend Requests"
             } 
         });
@@ -347,7 +348,13 @@ app.post('/add/user', loadUser, function(req, res){
      function friendRequestFailed() {
        req.flash('error', 'Friend Request Failed!...Please Try Again');
      }
-     var friend = Friends.find({requestor:req.currentUser.id, acceptor:users[0]._id},function(err, friends) {
+     var friend = Friends.find({ $or : [
+                                       {requestor:req.currentUser.id, acceptor:users[0]._id},
+                                       {acceptor:req.currentUser.id, requestor:users[0]._id},
+                                     ]
+                               },function(err, friends) {
+       console.log("========================friends"+friends);
+       console.log("========================friends"+friends.length);
        //first time the user sends in the request
        if(friends.length==0)
          {
@@ -364,7 +371,13 @@ app.post('/add/user', loadUser, function(req, res){
          }
         else {
           for(var i=0;i<friends.length;i++) {
-            if((friends[i].requestor == req.currentUser._id) && (friends[i].acceptor==users[0]._id)) {
+            if((friends[i].requestor == req.currentUser._id) && (friends[i].acceptor==users[0]._id && friends[i].status==1) || 
+                (friends[i].acceptor == req.currentUser._id) && (friends[i].requestor==users[0]._id && friends[i].status==1)) {
+              req.flash('error', 'Already Friend');
+              res.redirect('/userinfo');
+            }
+            else if((friends[i].requestor == req.currentUser._id) && (friends[i].acceptor==users[0]._id)|| 
+                (friends[i].acceptor == req.currentUser._id) && (friends[i].requestor==users[0]._id)) {
               req.flash('error', 'Friend Already Requested');
               res.redirect('/userinfo');
             }
@@ -597,7 +610,7 @@ app.post('/search.:format?', loadUser, function(req, res) {
                                ]
          },function(err, users) {
              console.log('errrrrrrrrrrrrrrrrrrrrrrrrrrrorrrrrrrrrrrrrrr'+users);
-             if(users=='') {
+             if(users== '') {
                req.flash('error','No Such User!...Please Try again');
                res.redirect('/userinfo');
              }
@@ -621,15 +634,24 @@ app.post('/search.:format?', loadUser, function(req, res) {
 
 //show user details
 app.get('/users/show/:id',loadUser, function(req, res){
- User.findById(req.param('id'), function(error, user) {
-    console.log('user info',user);
-    res.render('userinfo/show', {
-      locals: {
-        title: 'Full Profile Information',
-        user:user
-      }
+   User.findById(req.param('id'), function(error, user) {
+     var friend = Friends.find({ $or : [
+                                       {requestor:req.currentUser.id, acceptor:user._id},
+                                       {acceptor:req.currentUser.id, requestor:user._id},
+                                     ]
+                               },function(err, friend) {
+        console.log('user info',user);
+        console.log('Friend info',friend);
+        console.log('Friend length==========================',friend.length);
+        //console.log('Friend Status==========================',friend[0].status);
+        res.render('userinfo/show', {
+          locals: {
+            title: 'Full Profile Information',
+            user:user, currentUser:req.currentUser,friend:friend
+          }
+        });
+      });
     });
-  });
 });
  
  
