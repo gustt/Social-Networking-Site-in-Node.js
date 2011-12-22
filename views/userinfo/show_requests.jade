@@ -1,26 +1,126 @@
-div(align='center')
-  a(href='/userinfo') Home
-  h1=title
-  h1=users
+html
+  head
+    title sold_0002
+    meta(http-equiv='Content-Type', content='text/html; charset=windows-1251')
+    link(href='style.css', rel='stylesheet', type='text/css')
+  body(bgcolor='#FFFFFF', leftmargin='0', topmargin='0', marginwidth='0', marginheight='0')
   -each user in users
-   div
-        div
-          img(src='/uploads/photos/'+user.photo, height=80, width=60) 
-        div
-          span Name :
-          h4=(user.first_name+'&nbsp;'+user.last_name)
-        div
-          span Sex:
-          h4=user.sex
-        div
-          span Email:
-          h4=user.email
-        div
-          span Location:
-          h4=user.location
-       div
-         form( method="post", action="/accept/request")
-           input( type="hidden", name="_id", value=user._id.toHexString())
-           div
-             input( type="submit", name="Submit",value="Accept Request")
+    table(width='780', border='0', align='center', cellpadding='0', cellspacing='0')
+      tr
+        td(width='780', height='100%', align='center', valign='middle', bgcolor='#666666', style='padding: 11px;')
+          table(width='100%', border='0', cellspacing='0', cellpadding='0')
+            tr
+              td(width='214', valign='top', bgcolor='#FFFFFF')
+                table(width='100%', height='100%', border='0', cellpadding='0', cellspacing='9')
+                  tr
+                    td
+                      img(src='/uploads/photos/'+currentUser.photo, width=240, name='user[image]')
+                  tr
+                    td(valign='top')
+                      table(width='100%', border='0', cellspacing='3', cellpadding='0')
+                        tr
+                          td(bgcolor='#F5F2F2')
+                            div(class="left-navigation")
+                              img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
+                              a(href='') Profile
+                        tr
+                          td(bgcolor='#F5F2F2')
+                            div(class="left-navigation")
+                              img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
+                              a(href='/show/friends') Friends
+                        tr
+                          td(bgcolor='#F5F2F2')
+                            div(class="left-navigation")
+                              img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
+                              a(href='/show/friendrequests') Friend Request
+                        tr
+                          td(bgcolor='#F5F2F2')
+                            div(class="left-navigation")
+                              img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
+                              a(href='/videos') Videos Posted
+                              
+                        tr
+                          td(bgcolor='#F5F2F2')
+                            div(class="left-navigation")
+                              img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
+                              a(href='/videos/new') Upload New Video
+                        tr
+                          td(bgcolor='#F5F2F2')
+                            div(class="left-navigation")
+                              img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
+                              a(href='/userinfo/new') Change Profile Picture
+              td(width='11', rowspan='2')
+                img(src='/images/spacer.gif', width='11', height='1')
+              td(valign='top', bgcolor='#FFFFFF')
+                table(width='100%', height='100%', border='0', cellpadding='0', cellspacing='9')
+                  tr
+                    td
+                  tr
+                    td
+                      table(width='100%', border='0', cellspacing='5', cellpadding='0')
+                        tr
+                          td
+                            Friend Requests
+                        tr
+                          td
+                            table(width='100%', border='0', cellspacing='10', cellpadding='0')
+                              tr
+                                td(rowspan='2')
+                                  table(width='100%', border='0', cellspacing='0', cellpadding='0')
+                                    tr
+                                      td(bgcolor='#F5F2F2', style='padding: 2px;')
+                                        table(width='100%', border='0', cellspacing='5', cellpadding='0', bgcolor='#FFFFFF')
+                                          tr
+                                            td
+                                              div
+                                                img(src='/uploads/photos/'+user.photo, width=240)
+                                              div
+                                                span(class="user-label") Name:
+                                                div.user_fullname=user.first_name+'&nbsp;'+user.last_name
+                                              br
+                                              div
+                                                span(class="user-label") First Name:
+                                                div.firstname=user.first_name
+                                              br
+                                              div
+                                                span(class="user-label") Last Name:
+                                                div.last_name= user.last_name
+                                              br
+                                              div
+                                                span(class="user-label") Age:
+                                                div.age= user.age
+                                              br
+                                              div
+                                                span(class="user-label") Sex:
+                                                div.sex= user.sex
+                                              br
+                                              div
+                                                span(class="user-label") Location:
+                                                div.location= user.location
+                                              br
+                                              div
+                                                span(class="user-label") Email_id:
+                                                div.email= user.email
+                                              br
+                                              div
+                                                span(class="user-label") GeoLocation:
+                                                include index1
+                                                form( method="post", action="/accept/request")
+                                                  input( type="hidden", name="_id", value=user._id.toHexString())
+                                                  div(align="center")
+                                                    input( type="submit", name="Submit",value="Accept Request")                               
+                               
+                                   
+            tr
+              td(valign='bottom', bgcolor='#FFFFFF', style='padding: 9px;')
+                 
+              td(valign='bottom', bgcolor='#FFFFFF')
+                table(width='100%', border='0', cellspacing='9', cellpadding='0')
+                  tr
+                    td(height='56', valign='top', bgcolor='#3A8356')
+                      table(width='100%', border='0', cellspacing='9', cellpadding='0')
+                        tr
+                          td.white
+                            | Copyright © Pragtech.co.in. All rights reserved.
+                            a(href='http://www.pragtech.co.in', style='color: #FFFFFF; text-decoration: none;') Pragmatic Techsoft
       
