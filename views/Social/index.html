@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Login</title>
+	<link rel="stylesheet"  href="jquery.mobile-1.0.min.css" />
+	<link rel="stylesheet" href="docs/_assets/css/jqm-docs.css" />
+	<script src="jquery.js"></script>
+	<script src="experiments/themeswitcher/jquery.mobile.themeswitcher.js"></script>
+	<script src="docs/_assets/js/jqm-docs.js"></script>
+	<script src="jquery.mobile-1.0.min.js" type="text/javascript" charset="utf-8"></script>
+	<script>
+		  $(document).ready(function(){ 
+		  $('#login').click(function() {
+			  alert('invalid user name');
+			});
+  		}); 
+	</script>
+</head> 
+<body > 
+<div data-role="page" class="type-interior" data-theme="a">
+	<div data-role="header" data-theme="a"> 
+		<h1>Login</h1> 
+	</div>
+	<div data-role="content" >
+	       <input type="text" placeholder="User Name" name="name" id="name" value=""/>
+	</div>
+	<div data-role="content">
+	       <input type="password" placeholder="Password" name="password" id="password" value=""/>
+	</div>		
+    <a href="home.html" data-role="button" id="login" data-transition="slide">Login</a>
+	<div data-role="footer" data-position="fixed"> 
+		<h4>Powered By:Pragmatic Techsoft</h4> 
+	</div> 
+</div>	
+</body>
+</html>
