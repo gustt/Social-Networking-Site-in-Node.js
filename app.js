@@ -18,6 +18,7 @@ var express = require('express'),
     Friends,
     User,
     Post,
+    WallPost,
     LoginToken,
     Settings = { development: {}, test: {}, production: {} },
     emails;
@@ -62,7 +63,7 @@ app.dynamicHelpers(require('./helpers.js').dynamicHelpers);
 
 
 app.configure('development', function() {
-  app.set('db-uri', 'mongodb://localhost/nodejs_social_network_new-23');
+  app.set('db-uri', 'mongodb://localhost/nodejs_social_network_new-26');
   app.use(express.errorHandler({ dumpExceptions: true }));
 });
 
@@ -74,6 +75,7 @@ app.configure('production', function() {
 
 models.defineModels(mongoose, function() {
   app.User = User = mongoose.model('User');
+  app.WallPost = WallPost = mongoose.model('WallPost');
   app.Friends = Friends = mongoose.model('Friends');
   app.Post = Post = mongoose.model('Post');
   app.LoginToken = LoginToken = mongoose.model('LoginToken');
@@ -501,8 +503,8 @@ app.post('/videos',loadUser, function(req, res, next) {
   });
 });
 
-//index page user information
-app.get('/userinfo',loadUser, function(req, res){
+//View User Profile information
+/*app.get('/userinfo',loadUser, function(req, res){
   var user = User.find({_id:req.currentUser.id},function(err, users) {
                   res.render('userinfo/index', {
 		    locals: {
@@ -510,11 +512,11 @@ app.get('/userinfo',loadUser, function(req, res){
                     }
                 });
   })
-});
+});*/
 
 //Edit User
 
-// update blog post
+// update user information
 app.put('/user/edit/:id', loadUser, function(req, res, next) {
   User.findById(req.params.id, function(err, user) {
      function userUpdateFailed() {
@@ -544,7 +546,6 @@ app.put('/user/edit/:id', loadUser, function(req, res, next) {
     	     console.log("Longitude: " + longitude);
     	     user.latitude = latitude;
     	     user.longitude = longitude;
-             console.log('user sex======================'+user.sex);
              user.save(function(err) {
                if(err)
                  return userUpdateFailed();
@@ -569,6 +570,123 @@ app.get('/user/edit/:id', loadUser, function(req, res, next) {
         }
       });
     }
+  });
+});
+
+
+
+
+//Add Comment To The Wall Post
+
+app.post('/comment', loadUser, function(req, res, next) {
+  console.log('=======================request========'+req);
+  console.log("=======================request params========"+req.body._id);
+  console.log("=======================request params body========"+req.body.commentbody);
+  
+  var post = WallPost.findById(req.body._id,function(err, post) {
+    console.log('============================post=======' +post);
+    console.log('============================post id=======' +post._id);
+    console.log('============================post created at=======' +post.created);
+    console.log('============================comments=======' +post.comments);
+    if (!post)
+      return next(new NotFound('Post Not found'));
+    else {
+      // append comment
+      var comment = {
+          body: req.body.commentbody,
+          date: new Date()
+      };
+      post.comments.$push(comment);
+      
+      console.log("+++++++++++++++++++++++++++++++++++++"+post.comments);
+      function commentCreationFailed() {
+        req.flash('error', 'Unable To Save Comment..Please Try Again');
+        res.render('wallpost/index', {
+          locals: { post: post , currentUser:req.currentUser}
+        });
+      }
+      
+      post.save(function(err) {
+        if (err)
+          return commentCreationFailed();
+
+        req.flash('info', 'Thank you! Your comment has been saved.');
+        res.redirect('/wallpost');
+        //res.redirect('/' + req.params.year + '/' + req.params.month + '/' + req.params.day + '/' + req.params.slug + '/');
+      }); 
+    }
+  });
+});
+
+
+
+
+
+// save new Wall post
+
+app.get('/wallpost', loadUser, function(req, res) {
+  var post = WallPost.find({user_id:req.currentUser.id}).sort('created', -1).execFind(function(err, posts) {
+    console.log('=============================posts'+posts);
+    res.render('wallpost/index', {
+	locals: {
+	  posts:posts,currentUser: req.currentUser
+        }
+    });
+  });
+
+
+}); 
+
+
+// save new Wall post
+app.post('/wall/create', loadUser, function(req, res) {  
+  var post = new WallPost();
+  post.body = req.body.post.body;
+  console.log('===============================================wallpost',post.body);
+  post.created = new Date();
+  post.modified = new Date();
+  post.user_id = req.currentUser.id;
+  function postCreationFailed() {
+    req.flash('error', 'Failed to Post on Wall');
+    res.render('wallpost/create', {
+      locals: {
+        posts: posts,
+        currentUser : req.currentUser
+      }
+    });
+  }
+
+  post.save(function(err,posts) {
+    console.log('================================================posts====================',posts);
+    console.log('================================================posts====================',posts.body);
+    if (err)
+      return postCreationFailed();
+    req.flash('info', 'Posted Successfully');
+    res.redirect('/wallpost');
+  });
+});
+
+//Adding Wall 
+
+
+app.get('/wall/create', loadUser, function(req, res) {
+  res.render('wallpost/create', {
+    locals: {
+      post: new WallPost(),
+      currentUser : req.currentUser
+    }
+  });
+});
+
+
+
+app.get('/userinfo',loadUser, function(req, res){
+  var user = User.find({_id:req.currentUser.id},function(err, users) {
+           res.render('userinfo/index', {
+	     locals: {
+	       users:users,currentUser: req.currentUser
+             }
+           });
   });
 });
 
@@ -649,6 +767,7 @@ app.post('/sessions', function(req, res) {
        console.log('====================users ==================='+user);
        console.log('====================users ==================='+user.username);
        req.session.user_id = user.id;
+       console.log("---------------------------user session information---------------"+req.session.user_id);
        
       // Remember me
       if (req.body.remember_me) {
