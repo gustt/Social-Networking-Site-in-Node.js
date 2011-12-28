@@ -1,0 +1,182 @@
+html
+  head
+    title sold_0002
+    meta(http-equiv='Content-Type', content='text/html; charset=windows-1251')
+    link(href='style.css', rel='stylesheet', type='text/css')
+  body(bgcolor='#FFFFFF', leftmargin='0', topmargin='0', marginwidth='0', marginheight='0')
+    table(width='780', border='0', align='center', cellpadding='0', cellspacing='0')
+      tr
+        td(width='780', height='100%', align='center', valign='middle', bgcolor='#666666', style='padding: 11px;')
+          table(width='100%', border='0', cellspacing='0', cellpadding='0')
+            tr
+              td(width='214', valign='top', bgcolor='#FFFFFF')
+                table(width='100%', height='100%', border='0', cellpadding='0', cellspacing='9')
+                  tr
+                    td
+                      img(src='/uploads/photos/'+currentUser.photo, width=240, name='user[image]')
+                  tr
+                    td(valign='top')
+                      table(width='100%', border='0', cellspacing='3', cellpadding='0')
+                        tr
+                          td(bgcolor='#F5F2F2')
+                            div(class="left-navigation")
+                              img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
+                              a(href='/wallpost') Wall
+                        tr
+                          td(bgcolor='#F5F2F2')
+                            div(class="left-navigation")
+                              img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
+                              a(href='/userinfo') Profile
+                        tr
+                          td(bgcolor='#F5F2F2')
+                            div(class="left-navigation")
+                              img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
+                              a(href='/show/friends') Friends
+                        tr
+                          td(bgcolor='#F5F2F2')
+                            div(class="left-navigation")
+                              img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
+                              a(href='/show/friendrequests') Friend Request
+                        tr
+                          td(bgcolor='#F5F2F2')
+                            div(class="left-navigation")
+                              img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
+                              a(href='/videos') Videos Posted
+                              
+                        tr
+                          td(bgcolor='#F5F2F2')
+                            div(class="left-navigation")
+                              img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
+                              a(href='/videos/new') Upload New Video
+                        tr
+                          td(bgcolor='#F5F2F2')
+                            div(class="left-navigation")
+                              img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
+                              a(href='/userinfo/new') Change Profile Picture
+
+              td(width='11', rowspan='2')
+                img(src='/images/spacer.gif', width='11', height='1')
+              td(valign='top', bgcolor='#FFFFFF')
+                table(width='100%', height='100%', border='0', cellpadding='0', cellspacing='9')
+                  tr
+                    td
+                  tr
+                    td
+                      table(width='100%', border='0', cellspacing='5', cellpadding='0')
+                        tr
+                          td(align="center")
+                            h2 Wall
+                        tr
+                          td
+                            table(width='100%', border='0', cellspacing='10', cellpadding='0')
+                              tr
+                                td(rowspan='2')
+                                  table(width='100%', border='0', cellspacing='0', cellpadding='0')
+                                    tr
+                                      td(bgcolor='#F5F2F2', style='padding: 2px;')
+                                        table(width='100%', border='0', cellspacing='5', cellpadding='0', bgcolor='#FFFFFF')
+                                          tr
+                                            td
+                                              form(method ='post',action = '/wall/create')
+                                                div
+                                                  textarea(id ='txtbody', name ='post[body]',rows='3', cols ='60',maxlength ='400')
+                                                br
+                                                div(align ='right')
+                                                  input(type ='submit', name ='submit', value = '     Post     ', onclick="return validate();")
+                         
+                        tr
+                          td
+                            table(width='100%', border='0', cellspacing='10', cellpadding='0')
+                              tr
+                               div(class="all-wall-post")
+                                 -var ct = 0;
+                                 -each post in posts
+                                   -ct+=1;   
+                                   div(class="wall-parent")
+                                     div(class="user-wall")
+                                       img(src='/uploads/photos/'+currentUser.photo, width=45, name='user[image]')
+                                     div(class="user-post")
+                                       p=post.body
+                                       h6='posted on: ' + '&nbsp;' + post.created
+                                       br
+                                       -each comment in post.comments
+                                         div(class ="user-comment-parent")
+                                           div(class="user-comment")
+                                             img(src='/uploads/photos/'+currentUser.photo, width=30, name='user[image]')
+                                           div(class="user-comment-post")
+                                             p=comment.body
+                                             h6=comment.date
+                                       form( id="myform"+ct, method="post",action='comment')
+                                         input( id = "txtid", type="hidden", name="_id", value=post._id.toHexString())
+                                         a(id=ct , onclick ="commentbox(this.id)", href="javascript:;") Comment  
+                                                      
+                                   
+            tr
+              td(valign='bottom', bgcolor='#FFFFFF', style='padding: 9px;')
+                 
+              td(valign='bottom', bgcolor='#FFFFFF')
+                table(width='100%', border='0', cellspacing='9', cellpadding='0')
+                  tr
+                    td(height='56', valign='top', bgcolor='#3A8356')
+                      table(width='100%', border='0', cellspacing='9', cellpadding='0')
+                        tr
+                          td.white
+                            | Copyright © Pragtech.co.in. All rights reserved.
+                            a(href='http://www.pragtech.co.in', style='color: #FFFFFF; text-decoration: none;') Pragmatic Techsoft
+            script
+              function validate() {
+                var txt = document.getElementById("txtbody");
+                if(txt.value == "") {
+                  alert("can't leave body of the post empty");
+                  txt.focus();
+                  return false;
+                }
+                return true;
+              }
+            script
+              function commentbox(clicked_id) {
+                var cmnt =document.getElementById(clicked_id);
+                
+                 
+                
+                var area = document.createElement("textarea");
+                area.id = "MyEditBox";
+                area.name ="commentbody";
+                area.style.width = "340px";
+                area.style.height = "30px";
+                area.innerHTML = "";
+                var c = document.getElementById("myform"+clicked_id);
+                
+                
+                var button = document.createElement("button");
+                button.id = "mybutton";
+                button.type ="submit";
+                button.innerHTML ="Post Comment";
+                
+                c.appendChild(area);
+                c.appendChild(button);
+                    
+                cmnt.parentNode.removeChild(cmnt);
+                /*area.onfocus = function(){
+                    if(area.value == "Your Comment Here"){
+                           area.value = "";
+                  }
+                 };
+
+                 area.onblur = function(){
+                      if(area.value==""){
+                          area.value="Your Comment Here";
+                     }
+                 };*/
+               
+                 button.onclick = function() {
+                   var txtarea = document.getElementById("MyEditBox");
+                   if(txtarea.value == "") {
+                     alert("insert something to comment");
+                     txtarea.focus();
+                     return false;
+                   }
+                   return true;
+                 };
+
+              }
