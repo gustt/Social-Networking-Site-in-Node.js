@@ -1,0 +1,45 @@
+-each user in users
+  #left.outline-view
+    div
+      img(src='/uploads/photos/'+user.photo, width=240, name='user[image]')
+    div
+      a(href='/userinfo/new') Upload image
+    div
+      div
+        label(for='user_first_name') First Name:
+        input(id='user_first_name', name='user[first_name]', value=user.first_name || '')
+      div
+        label(for='user_last_name') Last Name:
+        input(id='last_last_name',name='user[last_name]', value=user.last_name || '')
+      div
+        label(for='user_full_name') Full Name:
+        input(id='user_full_name', name='user[full_name]', value=user.first_name +'&nbsp;'+ user.last_name || '')
+      div
+        label(for='user_age') Age:
+        input(id='user_age',name='user[age]', value=user.age || '')
+      div
+        label(for='user_sex') Sex:
+        select(id='user_sex', name='user[sex]')
+          option(id='user_sex',value =user.sex)=user.sex
+      div
+        label(for='user_location') Location:
+        input(id='user_location',name='user[location]', value=user.location || '')
+      div
+        label(for='user_username') UserName:
+        input(id='user_username', name='user[username]', value=user.username || '')
+      div
+        label(for='user_email') Email:
+        input(id='user_email',name='user[email]', value=user.email || '')
+  div(align='center')
+    h1='Welcome To Online Node' 
+    div
+      a(href='/show/friendrequests') Show Friend Requests
+    div
+      a(href='/videos') View Videos Video
+    div
+      a(href='/videos/new') Upload Video
+    div
+      a(href='/show/friends') Friends
+    div
+      include index1
+   
