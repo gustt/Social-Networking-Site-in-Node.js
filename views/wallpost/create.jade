@@ -4,7 +4,6 @@ html
     meta(http-equiv='Content-Type', content='text/html; charset=windows-1251')
     link(href='style.css', rel='stylesheet', type='text/css')
   body(bgcolor='#FFFFFF', leftmargin='0', topmargin='0', marginwidth='0', marginheight='0')
-  -each post in posts
     table(width='780', border='0', align='center', cellpadding='0', cellspacing='0')
       tr
         td(width='780', height='100%', align='center', valign='middle', bgcolor='#666666', style='padding: 11px;')
@@ -80,7 +79,7 @@ html
                                             td
                                               form(method ='post',action = '/wall/create')
                                                 div
-                                                  textarea(name ='post[body]',rows='3', cols ='50',maxlength ='400')
+                                                  textarea(name ='post[body]',rows='3', cols ='50', value=post.body || '')
                                                 br
                                                 div(align ='right')
                                                   input(type ='submit', name ='submit', value = '     Post     ')

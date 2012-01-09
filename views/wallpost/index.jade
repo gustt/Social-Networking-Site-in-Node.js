@@ -13,46 +13,68 @@ html
                 table(width='100%', height='100%', border='0', cellpadding='0', cellspacing='9')
                   tr
                     td
-                      img(src='/uploads/photos/'+currentUser.photo, width=240, name='user[image]')
+                      if(posts.length == 0 || posts[0].user_id == currentUser.id)
+                        img(src='/uploads/photos/'+currentUser.photo, width=240)
+                        //h1=currentUser.username
+                      else
+                        img(src='/uploads/photos/'+user.photo, width=240)
+                        //h1=user.username
                   tr
                     td(valign='top')
                       table(width='100%', border='0', cellspacing='3', cellpadding='0')
-                        tr
-                          td(bgcolor='#F5F2F2')
-                            div(class="left-navigation")
-                              img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
-                              a(href='/wallpost') Wall
-                        tr
-                          td(bgcolor='#F5F2F2')
-                            div(class="left-navigation")
-                              img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
-                              a(href='/userinfo') Profile
-                        tr
-                          td(bgcolor='#F5F2F2')
-                            div(class="left-navigation")
-                              img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
-                              a(href='/show/friends') Friends
-                        tr
-                          td(bgcolor='#F5F2F2')
-                            div(class="left-navigation")
-                              img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
-                              a(href='/show/friendrequests') Friend Request
-                        tr
-                          td(bgcolor='#F5F2F2')
-                            div(class="left-navigation")
-                              img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
-                              a(href='/videos') Videos Posted
+                        if(posts.length == 0 || posts[0].user_id == currentUser.id)
+                          tr
+                            td(bgcolor='#F5F2F2')
+                              div(class="left-navigation")
+                                img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
+                                a(href='/wallpost') Wall
+                          tr
+                            td(bgcolor='#F5F2F2')
+                              div(class="left-navigation")
+                                img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
+                                a(href='/userinfo') Profile
+                          tr
+                            td(bgcolor='#F5F2F2')
+                              div(class="left-navigation")
+                                img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
+                                a(href='/show/friends') Friends
+                          tr
+                            td(bgcolor='#F5F2F2')
+                              div(class="left-navigation")
+                                img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
+                                a(href='/show/friendrequests') Friend Request
+                          tr
+                            td(bgcolor='#F5F2F2')
+                              div(class="left-navigation")
+                                img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
+                                a(href='/videos') Videos Posted
                               
-                        tr
-                          td(bgcolor='#F5F2F2')
-                            div(class="left-navigation")
-                              img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
-                              a(href='/videos/new') Upload New Video
-                        tr
-                          td(bgcolor='#F5F2F2')
-                            div(class="left-navigation")
-                              img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
-                              a(href='/userinfo/new') Change Profile Picture
+                          tr
+                            td(bgcolor='#F5F2F2')
+                              div(class="left-navigation")
+                                img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
+                                a(href='/videos/new') Upload New Video
+                          tr
+                            td(bgcolor='#F5F2F2')
+                              div(class="left-navigation")
+                                img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
+                                a(href='/userinfo/new') Change Profile Picture
+                        else
+                          tr
+                            td(bgcolor='#F5F2F2')
+                              div(class="left-navigation")
+                                img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
+                                a(href='/userinfo') Home
+                          tr
+                            td(bgcolor='#F5F2F2')
+                              div(class="left-navigation")
+                                img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
+                                a(href='/friends/wallposts/'+user._id.toHexString()) Wall
+                          tr
+                            td(bgcolor='#F5F2F2')
+                              div(class="left-navigation")
+                                img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
+                                a(href='/user/videos/'+ user._id.toHexString()) Videos Posted
 
               td(width='11', rowspan='2')
                 img(src='/images/spacer.gif', width='11', height='1')
@@ -77,12 +99,21 @@ html
                                         table(width='100%', border='0', cellspacing='5', cellpadding='0', bgcolor='#FFFFFF')
                                           tr
                                             td
-                                              form(method ='post',action = '/wall/create')
-                                                div
-                                                  textarea(id ='txtbody', name ='post[body]',rows='3', cols ='60',maxlength ='400')
-                                                br
-                                                div(align ='right')
-                                                  input(type ='submit', name ='submit', value = '     Post     ', onclick="return validate();")
+                                              if(posts.length == 0 || posts[0].user_id == currentUser.id)
+                                                form(method ='post',action = '/wall/create')
+                                                  div
+                                                    textarea(id ='txtbody', name ='post[body]',rows='3', cols ='60',maxlength ='400')
+                                                  br
+                                                  div(align ='right')
+                                                    input(type ='submit', name ='submit', value = '     Post     ', onclick="return validate();")
+                                               else
+                                                 if(posts.length ==0 ||user.id)
+                                                   form(method ='post',action = '/wall/create')
+                                                     div
+                                                       textarea(id ='txtbody', name ='post[body]',rows='3', cols ='60')
+                                                     br
+                                                     div(align ='right')
+                                                       input(type ='submit', name ='submit', value = '     Post     ', onclick="return validate();")
                          
                         tr
                           td
@@ -91,26 +122,38 @@ html
                                div(class="all-wall-post")
                                  -var ct = 0;
                                  -each post in posts
-                                   -ct+=1;   
+                                   -ct+=1;
                                    div(class="wall-parent")
                                      div(class="user-wall")
-                                       img(src='/uploads/photos/'+currentUser.photo, width=45, name='user[image]')
+                                       if(post.user_id == currentUser.id)
+                                         if(post.friend_id)
+                                           h6=currentUser.username+ "    shared via"+"   "+post.friend_id
+                                         img(src='/uploads/photos/'+currentUser.photo, width=45, name='user[image]')
+                                       else
+                                         if(post.friend_id)
+                                           h4=user.username+ "     shared Throught"+"===>>       "+post.friend_id
+                                         img(src='/uploads/photos/'+user.photo, width=30, name='user[image]')
                                      div(class="user-post")
                                        p=post.body
                                        h6='posted on: ' + '&nbsp;' + post.created
                                        br
-                                       -each comment in post.comments
-                                         div(class ="user-comment-parent")
-                                           div(class="user-comment")
-                                             img(src='/uploads/photos/'+currentUser.photo, width=30, name='user[image]')
+                                       div(class ="user-comment-parent")
+                                         -each comment in post.comments
+                                           div(class="user-comment",style="float:left;")
+                                             img(src='/uploads/photos/'+comment.photo, width=30, name='user[image]')
+                                             
                                            div(class="user-comment-post")
                                              p=comment.body
                                              h6=comment.date
-                                       form( id="myform"+ct, method="post",action='comment')
+                                           
+                                       form( id="myform"+ct, method="post", action='comment')
                                          input( id = "txtid", type="hidden", name="_id", value=post._id.toHexString())
-                                         a(id=ct , onclick ="commentbox(this.id)", href="javascript:;") Comment  
-                                                      
-                                   
+                                         a(class="comment-link", id=ct , onclick ="commentbox(this.id)", href="javascript:;") Comment
+                                         if(post.user_id ==currentUser.id)
+                                           a(href='/delete/wallpost/'+post.id) Delete
+                                         else  
+                                           a(href='/share/wallpost/'+post.id) Share This Post
+                                 
             tr
               td(valign='bottom', bgcolor='#FFFFFF', style='padding: 9px;')
                  
@@ -123,16 +166,7 @@ html
                           td.white
                             | Copyright © Pragtech.co.in. All rights reserved.
                             a(href='http://www.pragtech.co.in', style='color: #FFFFFF; text-decoration: none;') Pragmatic Techsoft
-            script
-              function validate() {
-                var txt = document.getElementById("txtbody");
-                if(txt.value == "") {
-                  alert("can't leave body of the post empty");
-                  txt.focus();
-                  return false;
-                }
-                return true;
-              }
+             
             script
               function commentbox(clicked_id) {
                 var cmnt =document.getElementById(clicked_id);
