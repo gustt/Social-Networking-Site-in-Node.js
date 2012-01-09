@@ -1,0 +1,19 @@
+#jqm-home.type-interior(data-role='page', data-theme='a')
+  div(data-role='header', data-position='fixed')
+    h1 Edit Profile
+    a.ui-btn-right(href='home.html', data-theme='a', data-icon='home', data-iconpos='notext') Back
+  div(data-role='content')
+    div(data-theme='b')
+      input#fname(type='text', placeholder='First Name', name='user[first_name]', value=user.first_name || '')
+      input#lname(type='text', placeholder='Last Name', name='user[last_name]', value=user.last_name || '')
+      input#age(type='text', placeholder='Age', name='user[age]', value=user.age || '')
+      select#sex(name='sex', data-native-menu='false')
+        option Sex
+        option(value='male') Male
+        option(value='female') Female
+      input#location(type='text', placeholder='Location', name='user[location]', value=user.location || '')
+      input#uname(type='text', placeholder='User Name', name='user[username]', value=user.username || '')
+      div
+        input#submit(type ='submit',value='Edit Details')
+  div(data-role='footer', data-position='fixed')
+    h4 Powered By:Pragmatic Techsoft
