@@ -14,6 +14,8 @@ var express = require('express'),
     path = require('path'),
     geo = require('geo'),
     fs = require('fs'),
+    check = require('validator').check,
+    sanitize = require('validator').sanitize,      
     db,
     Friends,
     User,
@@ -63,7 +65,7 @@ app.dynamicHelpers(require('./helpers.js').dynamicHelpers);
 
 
 app.configure('development', function() {
-  app.set('db-uri', 'mongodb://localhost/nodejs_social_network_new-26');
+  app.set('db-uri', 'mongodb://localhost/nodejs_social_network_new-5th-jan');
   app.use(express.errorHandler({ dumpExceptions: true }));
 });
 
@@ -215,11 +217,263 @@ app.get('/', loadUser, function(req, res) {
   res.redirect('/index')
 });
 
+
+app.get('/share/wallpost/:id', loadUser, function(req, res,next){
+   var post = WallPost.findById(req.params.id,function(err, pst) {
+     console.log('============user=======', pst.user_id); 
+     var user = User.findById({_id:pst.user_id},function(err, user) { 
+      console.log('============user=======', user.username);
+      var post = new WallPost();
+      post.user_id = req.currentUser.id;
+      post.body = pst.body;
+      post.friend_id = user.username;
+      post.created = new Date();
+      post.save(function(err) {
+        if (err)
+      	  next(err);
+       	req.flash('info', 'Post successfully Shared');
+        res.redirect('/wallpost');
+      });
+    });
+  });
+});
+
+
+//Delete WallPost
+app.get('/delete/wallpost/:id', loadUser, function(req, res, next) {
+  WallPost.findById(req.params.id, function(err, post) {
+   console.log('========================post=========='+post._id);
+   if (!post)
+      return next(new NotFound('Post Not Found'));
+    else {
+      post.remove(function(err) {
+        if (err)
+          return next(new Error('Problem in Deleting Wall Post'));
+        else {
+          req.flash('info', 'Post Deleted Successfully');
+          res.redirect('/wallpost');
+        }
+      });
+    }
+  });
+});
+
+
+
+
+app.post('/friends/wallposts/comment', loadUser, function(req, res, next) {
+  console.log('=======================request========'+req);
+  console.log("=======================request params========"+req.body._id);
+  console.log("=======================request params body========"+req.body.commentbody);
+  
+  var post = WallPost.findById(req.body._id,function(err, post) {
+    console.log('============================post=======' +post);
+    console.log('============================post id=======' +post._id);
+    console.log('============================post user id =======' +post.user_id);
+    console.log('============================current user =======' +req.currentUser.id);
+    console.log('============================post created at=======' +post.created);
+    console.log('============================comments=======' +post.comments);
+   if (!post)
+      return next(new NotFound('Post Not found'));
+    else {
+      // append comment
+      var comment = {
+          photo:req.currentUser.photo,
+          user_id:req.currentUser.id,
+          body: req.body.commentbody,
+          date: new Date()
+      };
+      post.comments.$push(comment);
+      
+      console.log("+++++++++++++++++++++++++++++++++++++"+post.comments);
+      function commentCreationFailed() {
+        req.flash('error', 'Unable To Save Comment..Please Try Again');
+        res.render('wallpost/index', {
+          locals: { post: post , currentUser:req.currentUser}
+        });
+      }
+      
+      post.save(function(err) {
+        if (err)
+          return commentCreationFailed();
+
+        req.flash('info', 'Thank you! Your comment has been saved.');
+        res.redirect('/friends/wallposts/'+post.user_id);
+        //res.redirect('/' + req.params.year + '/' + req.params.month + '/' + req.params.day + '/' + req.params.slug + '/');
+      }); 
+    }
+  });
+});
+
+
+//show the Friends Wall post
+app.get('/friends/wallposts/:id',loadUser, function(req, res){
+ User.findById(req.param('id'), function(error, user) {
+    console.log('======================user info===============',user.username);
+    var post = WallPost.find({user_id:user._id},function(err,posts) {
+      console.log('==============================================================user selected here is the one that is friend'+user.username);
+      if(posts.length == 0) {
+        req.flash('error', user.username +'&nbsp;'+'Has Not Posted anything to his wall');
+        res.redirect('/friendinfo/show/'+user._id);
+      }
+      else{
+	res.render('wallpost/index', {
+	  locals: {
+	    posts: posts,currentUser: req.currentUser,user:user
+	  }
+	});
+      }
+   });
+ });
+});
+
+
+//Add Comment To The Wall Post
+
+app.post('/comment', loadUser, function(req, res, next) {
+  console.log('=======================request========'+req);
+  console.log("=======================request params========"+req.body._id);
+  console.log("=======================request params body========"+req.body.commentbody);
+  
+  var post = WallPost.findById(req.body._id,function(err, post) {
+    console.log('============================post=======' +post);
+    console.log('============================post id=======' +post._id);
+    console.log('============================post created at=======' +post.created);
+    console.log('============================comments=======' +post.comments);
+    if (!post)
+      return next(new NotFound('Post Not found'));
+    else {
+      // append comment
+      var comment = {
+          photo:req.currentUser.photo,
+          user_id:req.currentUser.id,
+          body: req.body.commentbody,
+          date: new Date()
+      };
+      post.comments.$push(comment);
+      
+      console.log("+++++++++++++++++++++++++++++++++++++"+post.comments);
+      function commentCreationFailed() {
+        req.flash('error', 'Unable To Save Comment..Please Try Again');
+        res.render('wallpost/index', {
+          locals: { post: post , currentUser:req.currentUser}
+        });
+      }
+      
+      post.save(function(err) {
+        if (err)
+          return commentCreationFailed();
+
+        req.flash('info', 'Thank you! Your comment has been saved.');
+        res.redirect('/wallpost');
+        //res.redirect('/' + req.params.year + '/' + req.params.month + '/' + req.params.day + '/' + req.params.slug + '/');
+      }); 
+    }
+  });
+});
+
+
+ 
+
+
+ 
+// save new Wall post
+
+app.get('/wallpost', loadUser, function(req, res) {
+  console.log('=============================inside wallpost=====================');
+  var friendpost = new Array();
+  var post = WallPost.find({user_id:req.currentUser.id}).sort('created', -1).execFind(function(err, posts) {
+      var ua = req.headers['user-agent'].toLowerCase();
+	if(/android.+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(ua)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|e\-|e\/|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(di|rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|xda(\-|2|g)|yas\-|your|zeto|zte\-/i.test(ua.substr(0,4))) {
+         res.render('wallpost/index1', {
+           locals: {
+              posts: posts,currentUser: req.currentUser
+           }
+         });
+       }
+         else {     
+                res.render('wallpost/index', {
+	           locals: {
+	              posts:posts,currentUser: req.currentUser
+                   }
+                });
+             }
+  });
+});
+
+
+// save new Wall post
+app.post('/wall/create', loadUser, function(req, res) {
+  var body = req.body.post.body;
+  console.log('==============================body'+body);
+  var post = new WallPost();
+  post.body = req.body.post.body;
+  console.log('===============================================wallpost',post.body);
+  post.created = new Date();
+  post.modified = new Date();
+  post.user_id = req.currentUser.id;
+
+  function postCreationFailed() {
+
+   var Validator = require('validator').Validator;
+    Validator.prototype.error = function (msg) {
+      this._errors.push(msg);
+    }
+    Validator.prototype.getErrors = function () {
+      return this._errors;
+    }
+    var validator = new Validator();
+    validator.check(body,"Can't leave Post Body Empty").notNull();
+    var errors = validator.getErrors();
+    console.log('---------------errors----================='+errors.length)
+    if(errors.length > 0){
+      req.flash('error', errors);
+      res.redirect('/wallpost');
+      return true
+    } 
+  
+  validator.check(body,"only 400 characters allowed").len(1,400);
+    var errors = validator.getErrors();
+    console.log('---------------errors----================='+errors.length)
+    if(errors.length > 0){
+      req.flash('error', errors);
+      res.redirect('/wallpost');
+      return true
+    } 
+  }
+  post.save(function(err) {
+    if(err)
+      return postCreationFailed();
+    req.flash('info', 'Posted Successfully');
+    res.redirect('/wallpost');
+  });
+});
+
+//Adding Wall 
+
+
+app.get('/wall/create', loadUser, function(req, res) {
+  res.render('wallpost/create', {
+    locals: {
+      post: new WallPost(),
+      currentUser : req.currentUser
+    }
+  });
+});
+
+
+
+
+
 //Share Friends video with urself
 
 app.post('/share/video', loadUser, function(req, res,next){
    var post = Post.findOne({_id:req.body._id},function(err, pst) { 
+    console.log('====================hereeeeeeeeeeeeeeee',pst);
+    User.find({_id:pst.user_id},function(err, user) {
+      console.log('====================userrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr',user);
       var post = new Post();
+      post.friend_id = user.username; 
       post.user_id = req.currentUser.id;
       post.filename = pst.filename;
       post.save(function(err) {
@@ -228,6 +482,7 @@ app.post('/share/video', loadUser, function(req, res,next){
        	req.flash('info', 'Video successfully Shared');
         res.redirect('/videos');
       });
+    });
   });
 });
 
@@ -240,7 +495,7 @@ app.get('/user/videos/:id',loadUser, function(req, res){
       console.log('==============================================================user selected here is the one that is friend'+user.username);
       if(posts.length == 0) {
         req.flash('error', user.username +'&nbsp;'+'Has Not Posted any Video');
-        res.redirect('/userinfo');
+        res.redirect('/friendinfo/show/'+user.id);
       }
       else{
 	      res.render('videos/index1', {
@@ -259,12 +514,22 @@ app.get('/user/videos/:id',loadUser, function(req, res){
 app.get('/friendinfo/show/:id',loadUser, function(req, res){
  User.findById(req.param('id'), function(error, user) {
     console.log('user info',user);
-    res.render('userinfo/friend_info', {
-      locals: {
-        title: 'Full Profile Information',
-        user:user,currentUser: req.currentUser
+    var ua = req.headers['user-agent'].toLowerCase();
+	if(/android.+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(ua)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|e\-|e\/|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(di|rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|xda(\-|2|g)|yas\-|your|zeto|zte\-/i.test(ua.substr(0,4))) {
+         res.render('userinfo/friend_info_mobile', {
+           locals: {
+              user:user,currentUser: req.currentUser
+           }
+         });
+       }
+    else {
+          res.render('userinfo/friend_info', {
+            locals: {
+                     title: 'Full Profile Information',
+                     user:user,currentUser: req.currentUser
+            }
+          });
       }
-    });
   });
 });
 
@@ -291,13 +556,23 @@ app.get('/show/friends', loadUser, function(req, res){
          }
         var user = User.find({_id: {$in :myarray}},function(err,users) {
            console.log('================users==='+users);
-           res.render('userinfo/show_friends', {
+           var ua = req.headers['user-agent'].toLowerCase();
+	if(/android.+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(ua)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|e\-|e\/|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(di|rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|xda(\-|2|g)|yas\-|your|zeto|zte\-/i.test(ua.substr(0,4))) {
+           res.render('userinfo/friend', {
 	     locals: {
-               title: 'Friends',
 	       users:users,
                currentUser: req.currentUser
              }
            });
+         } else {  
+             res.render('userinfo/show_friends', {
+	       locals: {
+                 title: 'Friends',
+	         users:users,
+                 currentUser: req.currentUser
+               }
+             });
+          }
         }); 
       }  
     });
@@ -326,20 +601,33 @@ app.get('/show/friendrequests', loadUser, function(req, res){
   var myarray= new Array()
   var friend = Friends.find({acceptor:req.currentUser.id,status:'0'},function(err, friends) {
      if(friends.length==0) {
-      req.flash('error', 'No Friend Request Currently');
-      res.redirect('/userinfo');
+      var ua = req.headers['user-agent'].toLowerCase();
+      if(/android.+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(ua)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|e\-|e\/|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(di|rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|xda(\-|2|g)|yas\-|your|zeto|zte\-/i.test(ua.substr(0,4))) {
+                          req.flash('No Friend Request Currently');
+                       }
+     else {
+               req.flash('error', 'No Friend Request Currently');
+               res.redirect('/userinfo');
+     }
     }
     for(var i=0;i<friends.length;i++) {
        myarray[i] = friends[i].requestor
 
      }
      var user = User.find({_id: {$in :myarray}},function(err,users) {
-	res.render('userinfo/show_requests', {
-            locals: {
-               users: users,currentUser: req.currentUser,
-		title :"My Friend Requests"
-            } 
-        });
+        var ua = req.headers['user-agent'].toLowerCase();
+	if(/android.+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(ua)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|e\-|e\/|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(di|rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|xda(\-|2|g)|yas\-|your|zeto|zte\-/i.test(ua.substr(0,4))) {
+                          res.render('userinfo/friend_request.jade', {
+                            locals : { users:users ,currentUser: req.currentUser}
+                          });
+          } else {
+	            res.render('userinfo/show_requests', {
+                      locals: {
+                                users: users,currentUser: req.currentUser,
+		                title :"My Friend Requests"
+                      } 
+                    });
+           }
      });
   });     
 });
@@ -400,7 +688,8 @@ app.get('/userinfo/new',loadUser, function(req, res){
 });
 
 //save photo
-app.post('/userinfo/new', loadUser, function(req, res, next) {
+app.post('/userinfo/new', function(req, res, next) {
+  //req.form.pause();
   req.form.complete(function(err, fields, files) {
     if(err) {
       next(err);
@@ -413,7 +702,7 @@ app.post('/userinfo/new', loadUser, function(req, res, next) {
           next(err);
         } else {  
             console.log('within else');
-            var user = User.find({_id:req.currentUser.id},function(err, users) {
+            var user = User.find({_id:req.session.user_id},function(err, users) {
                   users[0].photo=files.file.filename;
                   users[0].save(function(err) {
                     console.log('inside users');
@@ -437,20 +726,80 @@ app.post('/userinfo/new', loadUser, function(req, res, next) {
 
 //Show Uploaded Videos
 app.get('/videos', loadUser, function(req, res, next){
-  Post.find({ user_id: req.currentUser.id },function(err, posts) {
+  Post.find({user_id:req.currentUser.id}).sort('created_at', -1).execFind(function(err, posts) {
     if(posts.length == 0) {
       req.flash('error', 'No video Uploaded Yet');
       res.redirect('/userinfo');
     }
     else {
-    res.render('videos/index1', {
-      locals: {
-        posts: posts,currentUser: req.currentUser
-      }
-    });
+      var ua = req.headers['user-agent'].toLowerCase();
+	if(/android.+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(ua)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|e\-|e\/|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(di|rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|xda(\-|2|g)|yas\-|your|zeto|zte\-/i.test(ua.substr(0,4))) {
+              res.render('videos/videos_posted', {
+                locals : { posts:posts ,currentUser: req.currentUser}
+              });
+          }
+       else {  
+               res.render('videos/index1', {
+                 locals: {
+                   posts: posts,currentUser: req.currentUser
+                 }
+               });
+       }
    }
   });
 });
+
+
+//Save Uploaded Video
+app.post('/videos', function(req, res, next) {
+  //req.form.pause();
+  req.form.complete(function(err, fields, files) {
+   console.log('=====================sesssssssssssssssion=========================='+req.session);
+   console.log('=====================current user==========================ins',req.session.user_id);
+    if(err) {
+      next(err);
+    } else {
+      ins = fs.createReadStream(files.file.path);
+      console.log('===============================================ins'+ins);
+      ous = fs.createWriteStream(__dirname + '/public/uploads/photos/' + files.file.filename);
+      var post = new Post();
+      post.filename=files.file.filename;
+      console.log('========================================================='+post.filename);
+      post.file=files.file.path;
+      post.created_at = new Date();
+      post.user_id = req.session.user_id;
+      
+      function postCreationFailed() {
+        req.flash('error', 'Unable to Download ');
+        res.render('videos/new', {
+          locals: {
+             post: new Post(),currentUser: req.session.user_id
+          }
+        });
+      }
+      
+      util.pump(ins, ous, function(err) {
+        if(err) {
+          next(err);
+        } else { 
+                 console.log('\nuploaded %s to %s',  files.file.filename, files.file.path);
+                 post.save(function(err) {
+                   if (err)
+      			return postCreationFailed();
+       	           req.flash('info', 'Video Succesfully Uploaded');
+        	   res.redirect('/videos');
+                });
+              }
+      });
+    }
+  });
+  req.form.on('progress', function(bytesReceived, bytesExpected){
+    var percent = (bytesReceived / bytesExpected * 100) | 0;
+    process.stdout.write('Uploading: %' + percent + '\r');
+  });
+  
+});
+
 
 //New Upload
 app.get('/videos/new',loadUser, function(req, res){
@@ -461,47 +810,6 @@ app.get('/videos/new',loadUser, function(req, res){
   });
 });
 
-//Save Uploaded Video
-app.post('/videos',loadUser, function(req, res, next) {
-  req.form.complete(function(err, fields, files) {
-    if(err) {
-      next(err);
-    } else {
-      ins = fs.createReadStream(files.file.path);
-      ous = fs.createWriteStream(__dirname + '/public/uploads/photos/' + files.file.filename);
-      var post = new Post();
-      post.filename=files.file.filename;
-      post.file=files.file.path;
-      post.created_at = new Date();
-      post.user_id = req.currentUser.id;
-      //req.pause();
-      function postCreationFailed() {
-        req.flash('error', 'Unable to Download ');
-        res.render('videos/new', {
-          locals: {
-             post: new Post(),currentUser: req.currentUser
-          }
-        });
-      }
-      //req.resume();
-      util.pump(ins, ous, function(err) {
-        if(err) {
-          req.flash('info', 'util.pump error');
-          next(err);
-        } else {  
-                 console.log('within else');
-                 post.save(function(err) {
-                   if (err)
-      			return postCreationFailed();
-       	           req.flash('info', 'Video Succesfully Downloaded');
-        	   res.redirect('/videos');
-                });
-              }
-      });
-       
-    }
-  });
-});
 
 //View User Profile information
 /*app.get('/userinfo',loadUser, function(req, res){
@@ -514,11 +822,14 @@ app.post('/videos',loadUser, function(req, res, next) {
   })
 });*/
 
+
 //Edit User
 
 // update user information
 app.put('/user/edit/:id', loadUser, function(req, res, next) {
+  console.log('inside ====================================users edit=======');
   User.findById(req.params.id, function(err, user) {
+     console.log('user==============================='+user);
      function userUpdateFailed() {
         req.flash('error', 'Failed To Update The User!.. Please Try Again');
         res.render('users/edit', {
@@ -533,6 +844,7 @@ app.put('/user/edit/:id', loadUser, function(req, res, next) {
     if (!user)
       return next(new NotFound('User Not Found'));
     else {
+           console.log('=========================inside else===========');
            user.first_name = req.body.user.first_name 
            user.last_name =  req.body.user.last_name
            user.age =  req.body.user.age
@@ -559,16 +871,24 @@ app.put('/user/edit/:id', loadUser, function(req, res, next) {
 
 
 app.get('/user/edit/:id', loadUser, function(req, res, next) {
+  console.log('---------------------users edit-----');
   User.findById(req.params.id, function(err, user) {
     if (!user)
       return next(new NotFound('User could not be found'));
     else {
-      res.render('users/edit', {
-        locals: {
-          user: user,currentUser: req.currentUser
-
-        }
-      });
+         var ua = req.headers['user-agent'].toLowerCase();
+	if(/android.+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(ua)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|e\-|e\/|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(di|rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|xda(\-|2|g)|yas\-|your|zeto|zte\-/i.test(ua.substr(0,4))) {
+              res.render('users/edit_profile.jade', {
+                locals : { user:user ,currentUser: req.currentUser}
+              });
+	}
+      else {
+            res.render('users/edit', {
+              locals: {
+               user: user,currentUser: req.currentUser
+              }
+            });
+          }
     }
   });
 });
@@ -576,117 +896,54 @@ app.get('/user/edit/:id', loadUser, function(req, res, next) {
 
 
 
-//Add Comment To The Wall Post
 
-app.post('/comment', loadUser, function(req, res, next) {
-  console.log('=======================request========'+req);
-  console.log("=======================request params========"+req.body._id);
-  console.log("=======================request params body========"+req.body.commentbody);
-  
-  var post = WallPost.findById(req.body._id,function(err, post) {
-    console.log('============================post=======' +post);
-    console.log('============================post id=======' +post._id);
-    console.log('============================post created at=======' +post.created);
-    console.log('============================comments=======' +post.comments);
-    if (!post)
-      return next(new NotFound('Post Not found'));
-    else {
-      // append comment
-      var comment = {
-          body: req.body.commentbody,
-          date: new Date()
-      };
-      post.comments.$push(comment);
-      
-      console.log("+++++++++++++++++++++++++++++++++++++"+post.comments);
-      function commentCreationFailed() {
-        req.flash('error', 'Unable To Save Comment..Please Try Again');
-        res.render('wallpost/index', {
-          locals: { post: post , currentUser:req.currentUser}
-        });
+
+
+//show the Friends Wall post
+/*app.get('/friends/wallposts/:id',loadUser, function(req, res){
+ User.findById(req.param('id'), function(error, user) {
+    console.log('======================user info===============',user.username);
+    var post = WallPost.find({user_id:user._id},function(err,posts) {
+      console.log('==============================================================user selected here is the one that is friend======='+user.username);
+      for(var i=0; i<posts.length; i++) {
+        console.log("===========================post id==="+posts[i].id);
+        console.log("===========================post id==="+posts[i].body);
       }
-      
-      post.save(function(err) {
-        if (err)
-          return commentCreationFailed();
-
-        req.flash('info', 'Thank you! Your comment has been saved.');
-        res.redirect('/wallpost');
-        //res.redirect('/' + req.params.year + '/' + req.params.month + '/' + req.params.day + '/' + req.params.slug + '/');
-      }); 
-    }
-  });
-});
-
-
-
-
-
-// save new Wall post
-
-app.get('/wallpost', loadUser, function(req, res) {
-  var post = WallPost.find({user_id:req.currentUser.id}).sort('created', -1).execFind(function(err, posts) {
-    console.log('=============================posts'+posts);
-    res.render('wallpost/index', {
-	locals: {
-	  posts:posts,currentUser: req.currentUser
-        }
-    });
-  });
-
-
-}); 
-
-
-// save new Wall post
-app.post('/wall/create', loadUser, function(req, res) {  
-  var post = new WallPost();
-  post.body = req.body.post.body;
-  console.log('===============================================wallpost',post.body);
-  post.created = new Date();
-  post.modified = new Date();
-  post.user_id = req.currentUser.id;
-  function postCreationFailed() {
-    req.flash('error', 'Failed to Post on Wall');
-    res.render('wallpost/create', {
-      locals: {
-        posts: posts,
-        currentUser : req.currentUser
+      if(posts.length == 0) {
+        req.flash('error', user.username +'&nbsp;'+'Has Not Posted Anything Yet');
+        res.redirect('/friendinfo/show/'+user._id);
       }
-    });
-  }
-
-  post.save(function(err,posts) {
-    console.log('================================================posts====================',posts);
-    console.log('================================================posts====================',posts.body);
-    if (err)
-      return postCreationFailed();
-    req.flash('info', 'Posted Successfully');
-    res.redirect('/wallpost');
-  });
-});
-
-//Adding Wall 
+      else{
+	 res.render('wallpost/index', {
+	   locals: {
+	     posts: posts,currentUser: req.currentUser, user:user
+	   }
+	 });
+      }
+   });
+ });
+});*/
 
 
-app.get('/wall/create', loadUser, function(req, res) {
-  res.render('wallpost/create', {
-    locals: {
-      post: new WallPost(),
-      currentUser : req.currentUser
-    }
-  });
-});
 
 
 
 app.get('/userinfo',loadUser, function(req, res){
   var user = User.find({_id:req.currentUser.id},function(err, users) {
+      console.log('==========================inside userinfo===');
+      var ua = req.headers['user-agent'].toLowerCase();
+	if(/android.+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(ua)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|e\-|e\/|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(di|rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|xda(\-|2|g)|yas\-|your|zeto|zte\-/i.test(ua.substr(0,4))) {
+              res.render('Social/index', {
+                locals : { users:users ,currentUser: req.currentUser}
+              });
+	}
+        else {
            res.render('userinfo/index', {
 	     locals: {
 	       users:users,currentUser: req.currentUser
              }
            });
+       }
   });
 });
 
@@ -694,21 +951,32 @@ app.get('/userinfo',loadUser, function(req, res){
 
 //Create new user
 app.get('/users/new', function(req, res) {
-  res.render('users/new.jade', {
-    locals: { user: new User() }
-  });
+  var ua = req.headers['user-agent'].toLowerCase();
+  if(/android.+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(ua)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|e\-|e\/|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(di|rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|xda(\-|2|g)|yas\-|your|zeto|zte\-/i.test(ua.substr(0,4))) {
+             res.render('users/register.jade', {
+               locals: { user: new User() }
+             });
+	}else {
+           res.render('users/new.jade', {
+             locals: { user: new User() }
+           });
+       }
 });
 //Save New User
 app.post('/users.:format?', function(req, res) {
-   
+  var email = req.body.user.email;
+  var first_name = req.body.user.first_name;
+  var last_name = req.body.user.last_name;
+  var age = req.body.user.age;
+  var password = req.body.user.password; 
+  console.log("=============firstname",first_name);
+  console.log("=============type of ",typeof(first_name));
   var user = new User(req.body.user);
+  var sex = new User(req.body.user.sex);
   user.photo='default.png';
-  
   var sensor = false;
   var address = req.body.user.location;
-  var email = req.body.email;
-  var first_name = req.body.first_name;
-  user.email = email;
+   
   console.log('email id ============================================='+user.email);
   geo.geocoder(geo.google, address, sensor,function(formattedAddress, latitude, longitude) {
     console.log("Formatted Address: " + formattedAddress);
@@ -719,13 +987,87 @@ app.post('/users.:format?', function(req, res) {
   
   
   function userSaveFailed() {
-    req.flash('error', 'Account creation failed');
-    res.render('users/new.jade', {
-      locals: { user: user }
-    });
+    var Validator = require('validator').Validator;
+    var v = new Validator();
+    
+     
+
+    Validator.prototype.error = function (msg) {
+      this._errors.push(msg);
+    }
+    Validator.prototype.getErrors = function () {
+      return this._errors;
+    }
+
+    var validator = new Validator();
+    validator.check(first_name,'Please Enter A Valid First Name').regex(/^[a-z]+$/);
+    var errors = validator.getErrors();
+    console.log('---------------errors----================='+errors.length)
+    if(errors.length > 0){
+      console.log('+++++++++++++++++++++++++='+req);
+      req.flash('error',errors);
+      res.render('users/new.jade', {
+        locals: { user: new User(req.body.user),}
+      });
+      return true
+    }
+    
+    validator.check(last_name,'Please Enter A Valid Last Name').regex(/^[a-z]+$/);
+    var errors1 = validator.getErrors();
+    console.log('---------------errors----================='+errors1.length)
+    if(errors1.length > 0){
+      console.log('+++++++++++++++++++++++++='+req);
+      req.flash('error',errors1);
+      res.render('users/new.jade', {
+        locals: { user: new User(req.body.user),}
+      });
+      return true
+    } 
+   
+    validator.check(age,'Age Cannot Contain String Value').regex(/^[0-9]+$/);
+    validator.check(age,'Minimum Age Should be 18').min(18);
+    var errors2 = validator.getErrors();
+    console.log('---------------errors----================='+errors2.length)
+    if(errors2.length > 0){
+      req.flash('error',errors2);
+      console.log('+++++++++++++++++++++++++='+req);
+      res.render('users/new.jade', {
+        locals: { user: new User() }
+      });
+      return true
+    }
+   
+    validator.check(email,'Please Enter A Valid Email').isEmail();
+    var errors3 = validator.getErrors();
+    console.log('---------------errors----================='+errors3.length)
+    if(errors3.length > 0){
+      req.flash('error',errors3);
+      res.render('users/new.jade', {
+        locals: { user: new User(), res:res }
+      });
+      return true
+    }
+
+    validator.check(password,'Password Field Can Not Be Empty ').notNull();
+    validator.check(password,'Password should b 8 characters long').len(8,30);
+    var errors4 = validator.getErrors();
+    console.log('---------------errors----================='+errors4.length)
+    if(errors4.length > 0){
+      req.flash('error',errors4);
+      res.render('users/new.jade', {
+        locals: { user: new User(), res:res }
+      });
+      return true
+    }
+
+    
+     
+
   }
+
   user.save(function(err) {
     if (err) return userSaveFailed();
+    console.log("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy");
     req.flash('info', 'Your account has been created');
     emails.sendWelcome(user);
 
@@ -739,7 +1081,7 @@ app.post('/users.:format?', function(req, res) {
         res.redirect('/userinfo');
     }
   });
-  });
+  }); 
 });
 
 // Sessions
@@ -763,9 +1105,14 @@ app.post('/sessions', function(req, res) {
   console.log('========================================================================inside sessions');
   User.findOne({ email: req.body.user.email }, function(err, user) {
     console.log('====================users ==================='+user);
-    if (user && user.authenticate(req.body.user.password)) {
+     if(typeof(user)==undefined) {
+       console.log('invalid username password');
+       req.flash('error', 'Invalid username password!..Please Try Again');
+       res.redirect('/sessions/new');
+     }
+     if (user && user.authenticate(req.body.user.password)) {
        console.log('====================users ==================='+user);
-       console.log('====================users ==================='+user.username);
+      
        req.session.user_id = user.id;
        console.log("---------------------------user session information---------------"+req.session.user_id);
        
@@ -777,19 +1124,20 @@ app.post('/sessions', function(req, res) {
           res.redirect('/userinfo');
         });
       } else {
-              
-              var ua = req.headers['user-agent'].toLowerCase();
-	if(/android.+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(ua)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|e\-|e\/|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(di|rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|xda(\-|2|g)|yas\-|your|zeto|zte\-/i.test(ua.substr(0,4))) {
-              res.render('Social/index');
-	}
-        else {
               res.redirect('/userinfo');
-             }
       }
-    } else {
-      console.log('invalid username password');
-      //req.flash('error', 'Incorrect credentials');
-      res.redirect('/Social/index');
+    } 
+    else {
+          var ua = req.headers['user-agent'].toLowerCase();
+	if(/android.+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(ua)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|e\-|e\/|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(di|rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|xda(\-|2|g)|yas\-|your|zeto|zte\-/i.test(ua.substr(0,4))) {
+		res.redirect('/Social/index');
+	}
+      else {
+            console.log('invalid username password');
+            req.flash('error', 'Incorrect credentials');
+            res.redirect('/sessions/new');
+      
+       } 
     }
   }); 
 });
