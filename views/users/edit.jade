@@ -1,0 +1,5 @@
+form(method='post', action='/user/edit/' + user.id + '/')
+  input(name='id', value=user.id, type='hidden')
+  input(name='_method', value='PUT', type='hidden')
+  != partial('user_info', { locals: { user: user, title: 'Edit User' }})  
+

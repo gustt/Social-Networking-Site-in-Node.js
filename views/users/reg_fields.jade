@@ -1,0 +1,21 @@
+#jqm-home.type-interior(data-role='page', data-theme='a')
+  div(data-role='header', data-position='fixed')
+    h1 Sign Up
+    a.back(href='index.html', data-theme='a',  data-transition='slideup') Back
+  div(data-role='content')
+    div(data-theme='b')
+      input#fname(type='text', placeholder='First Name', name='user[first_name]', value=user.first_name || '')
+      input#lname(type='text', placeholder='Last Name', name='user[last_name]', value=user.last_name || '')
+      input#age(type='text', placeholder='Age', name='user[age]', value=user.age || '')
+      select#sex(name='user[sex]', data-native-menu='false')
+        option Sex
+        option(value =user.sex,selected=1)='Male'
+        option(value =user.sex)='Female'
+      input#location(type='text', placeholder='Location', name='user[location]', value=user.location || '')
+      input#uname(type='text', placeholder='User Name', name='user[username]', value=user.username || '')
+      input#email(type='email', placeholder='Email', name='email',id='UserEmail')
+      input#password(type='password', placeholder='Password', name='user[password]', value=user.password || '')
+      div
+        input#submit(type ='submit',value='Register')
+  div(data-role='footer', data-position='fixed')
+    h4 Powered By:Pragmatic Techsoft
