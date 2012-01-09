@@ -1,0 +1,123 @@
+!!! 5
+html
+  head
+    meta(charset='utf-8')
+    meta(name='viewport', content='width=device-width, minimum-scale=1, maximum-scale=1')
+    meta(name='apple-mobile-web-app-capable', content='yes')
+    meta(name='apple-mobile-web-app-status-bar-style', content='black')
+    title Wall
+    link(rel='stylesheet', href='/stylesheets/jquery.mobile-1.0.css')
+    link(rel='stylesheet', href='/stylesheets/jquery.mobile.scrollview.css')
+    //
+       <link rel="stylesheet" href="../../docs/_assets/css/jqm-docs.css" /> 
+    style
+      .ui-content.ui-scrollview-clip {
+      padding: 0;
+      }
+      .ui-content.ui-scrollview-clip > div.ui-scrollview-view {
+      margin: 0;
+      padding: 15px;
+      }
+      .ui-content.ui-scrollview-clip > .ui-listview.ui-scrollview-view {
+      margin: 0;
+      }
+    script(src='/javascripts/jquery.js')
+    script(src='/javascripts/jquery.mobile-1.0.js')
+    script(src='/javascripts/jquery.easing.1.3.js')
+    script(src='/javascripts/jquery.mobile.scrollview.js')
+    script(src='/javascripts/scrollview.js')
+  body
+    #jqm-home.type-interior(data-role='page', data-theme='b')
+      div(data-role='header', data-position='fixed')
+        h1 Pragma-Portal
+          // a(href="/sessions",data-direction="reverse",data-theme="b",class="ui-btn-right") Log Out 
+        div(data-role='navbar')
+          ul
+            li
+              a(href='/userinfo') Profile
+            li
+              a.ui-btn-active.ui-state-persist(href='/wallpost') Wall
+            li
+              a(href='/show/friends') Friends
+      div(data-role='content')
+        div(data-role='fieldcontain')
+          form(method ='post',action = '/wall/create')
+            textarea#textarea(cols='40', rows='8', name ='post[body]')
+            div(align="center")
+              input( type="submit", name="Submit",value='     Post     ')
+        ul(data-role='listview', data-inset='true', data-position='fixed')
+          -var ct = 0;
+          -each post in posts
+            -ct+=1;
+            div(class="wall-parent")
+              div(class="user-wall")
+                if(post.user_id == currentUser.id)
+                  if(post.friend_id)
+                    h6=currentUser.username+ "    shared via"+"   "+post.friend_id
+                  img(src='/uploads/photos/'+currentUser.photo, width=45, name='user[image]')
+                else
+                  if(post.friend_id)
+                    h4=user.username+ "     shared via"+" "+post.friend_id
+                  img(src='/uploads/photos/'+user.photo, width=30, name='user[image]')
+              div(class="user-post")
+                p=post.body
+                h6='posted on: ' + '&nbsp;' + post.created
+                br
+                div(class ="user-comment-parent")
+                  -each comment in post.comments
+                    div(class="user-comment",style="float:left;")
+                      img(src='/uploads/photos/'+comment.photo, width=30, name='user[image]')
+                    div(class="user-comment-post")
+                      p=comment.body
+                      h6=comment.date
+                form( id="myform"+ct, method="post", action='comment')
+                  input( id = "txtid", type="hidden", name="_id", value=post._id.toHexString())
+                  a(class="comment-link", id=ct , onclick ="commentbox(this.id)", href="javascript:;") Comment
+                  if(post.user_id ==currentUser.id)
+                    a(href='/delete/wallpost/'+post.id) Delete
+                  else  
+                    a(href='/share/wallpost/'+post.id) Share This Post
+            
+
+    
+      div(data-role='footer', data-position='fixed')
+        h4 Powered By:Pragmatic Techsoft
+     
+
+    script
+      function validate() {
+         var txt = document.getElementById("txtbody");
+         if(txt.value == "") {
+          alert("can't leave body of the post empty");
+          txt.focus();
+          return false;
+        }
+        return true;
+       }
+    script
+      function commentbox(clicked_id) {
+        var cmnt =document.getElementById(clicked_id);
+        var area = document.createElement("textarea");
+        area.id = "MyEditBox";
+        area.name ="commentbody";
+        area.style.width = "340px";
+        area.style.height = "30px";
+        area.innerHTML = "";
+        var c = document.getElementById("myform"+clicked_id);
+        var button = document.createElement("button");
+        button.id = "mybutton";
+        button.type ="submit";
+        button.innerHTML ="Post Comment";
+        c.appendChild(area);
+        c.appendChild(button);
+        cmnt.parentNode.removeChild(cmnt);
+        button.onclick = function() {
+           var txtarea = document.getElementById("MyEditBox");
+           if(txtarea.value == "") {
+             alert("insert something to comment");
+             txtarea.focus();
+             return false;
+           }
+           return true;
+         };
+      }
