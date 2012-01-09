@@ -83,7 +83,8 @@ function defineModels(mongoose, fn) {
    * Used for persisting user comments
    */
   var Comment = new Schema({
-    //author: String,
+    user_id: ObjectId,
+    photo:String,
     date: Date,
     body: String
   });
@@ -128,7 +129,7 @@ function defineModels(mongoose, fn) {
 
 
 var WallPost = new Schema({
-    //title: String,
+    friend_id: String,
     preview: String,
     body: String,
     //rsstext: String,
@@ -238,14 +239,14 @@ var User = new Schema({
     'first_name': { type: String, validate: /[a-z]/ },
     'last_name':{ type: String, validate: /[a-z]/ },
     'age':Number,
-    'sex':{ type: String, validate: /[a-z]/ },
+    'sex':{ type: String},
     'photo':String,
     'location':{ type: String, validate: /[a-z]/ },
     'latitude' : String,
     'longitude' : String,
     'keywords': [String],
     'username':String,
-    'email': { type: String, validate: [validatePresenceOf, 'an email is required'], index: { unique: true } },
+    'email': { type: String, validate: [validatePresenceOf, 'an email is required'], index: { unique: true }, required:true },
     'hashed_password': { type: String},
     'salt': String,
   });
@@ -277,12 +278,13 @@ var User = new Schema({
 
   User.pre('save', function(next) {
     this.keywords = extractKeywords(this.first_name);
-    /*if (!validatePresenceOf(this.password)) {
+    next();
+    if (!validatePresenceOf(this.password)) {
       next(new Error('Invalid password'));
     } else {
       next();
-    }*/
-    next();
+    }
+    
   });
 
 
