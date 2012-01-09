@@ -1,10 +1,14 @@
-.type-interior(data-role='page', data-theme='a')
-  div(data-role='header', data-theme='a')
-    h1 Login
+#jqm-home.type-interior(data-role='page', data-theme='a')
+  div(data-role='header', data-position='fixed')
+    h1 Sign In
+    a.ui-btn-right(href='/users/new', data-icon='plus', data-theme='b', data-transition='slidedown') Sign Up
+  #logo(align='center')
+    img(src='/images/logo.png', width='143', height='59', alt='Logo')
   div(data-role='content')
-    input#name(type='text', placeholder='User Name', name='user[email]', value=user.email || '')
-  div(data-role='content')
-     input#password(type='password', placeholder='Password', name='user[password]', value=user.password || '')
-     input#submit(type ='submit', value = 'Login')
+    div
+      input#name(type='text', placeholder='User Name', name='user[email]', value=user.email || '')
+    div
+      input#password(type='password', placeholder='Password',name='user[password]', value=user.password || '')
+      input#submit(type ='submit', value = 'Login')
   div(data-role='footer', data-position='fixed')
     h4 Powered By:Pragmatic Techsoft

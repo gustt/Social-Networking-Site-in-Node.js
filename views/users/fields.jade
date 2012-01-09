@@ -1,7 +1,7 @@
 div
   div
     label(for='user_first_name') First Name:
-    input(id='user_first_name', name='user[first_name]', value=user.first_name || '')
+    input(id='user_first_name', name='user[first_name]', value= user.first_name|| '')
    div
      label(for='user_last_name') Last Name:
      input(id='last_last_name',name='user[last_name]', value=user.last_name || '')
@@ -21,9 +21,29 @@ div
      input(id='user_username',name='user[username]', value=user.username || '')
    div
      label(for='user_email') Email:
-     input(id='user_email',name='user[email]', value=user.email || '')
+     input(id='user_email',name='user[email]',id='UserEmail', value=user.email || '')
    div
      label(for='user_password') Password:
      input(id='user_email',name='user[password]', value=user.password || '', type='password')
+   
 
+script
+  
+  window.onload = function(){
+     var first = document.getElementById('user_first_name').value = "Username";
+  };
+  
 
+  var first = document.getElementById('user_first_name');
+  first.onblur = function(){
+    if(first.value == ''){
+      first.value = 'Username';
+      }
+  };
+
+  first.onfocus = function(){
+    if(first.value == 'Username'){
+      first.value = '';
+      }
+  };
+   
