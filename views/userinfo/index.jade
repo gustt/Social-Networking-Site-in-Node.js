@@ -22,6 +22,11 @@ html
                           td(bgcolor='#F5F2F2')
                             div(class="left-navigation")
                               img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
+                              a(href='/wallpost') Wall
+                        tr
+                          td(bgcolor='#F5F2F2')
+                            div(class="left-navigation")
+                              img(src='/images/right_nav_dop.gif', width='49', height='30', alt='')
                               a(href='') Profile
                         tr
                           td(bgcolor='#F5F2F2')
@@ -103,7 +108,13 @@ html
                                               br
                                               div
                                                 span(class="user-label") GeoLocation:
-                                                include index1                                   
+                                                if(user._id)
+                                                  include index1
+                                              br
+                                              tr
+                                                td(bgcolor='#F5F2F2')
+                                                  div(class="left-navigation", align ="center")
+                                                    a(href='/user/edit/'+user._id) Edit Details                                  
                                
                                    
             tr
